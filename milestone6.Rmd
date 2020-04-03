@@ -45,11 +45,212 @@ The authors seek to disprove the assumption that economic elites are homogenous 
 
 # Replication
 
-Numbers I have not been able to replicate correctly: 1) in Table 2: "Technology Entrepreneurs Do Not Agree with Libertarian Philosophy," my percentage for Tech Entrepreneurs is slightly off, even though my numbers for the other groups are correct; 2) in Table 6: "Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups," my linear regression contains the wrong coefficients relating to the "tech product/service" indicator variable, even though the other parts of the regression are correct. I suspect this is due to scaling the variable incorrectly so I will continue looking into that.
+Numbers I have not been able to replicate correctly: 1) in Table 2: "Technology Entrepreneurs Do Not Agree with Libertarian Philosophy," my percentage for Tech Entrepreneurs is slightly off; 2) in Table 6: "Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups," my linear regression contains the wrong coefficients relating to the "tech product/service" indicator variable. I suspect this is due to scaling the variable incorrectly so I will continue looking into that.
 
-Aesthetics I am looking to improve on: There are a few figures with multiple plots that I would look to display more similarly to the way they are in the original paper. 
+# Extension
 
-# Graphic
+My proposed extension is to re-explore the paper’s findings with a focus on age. I am interested in seeing how political beliefs vary with age among technology entrepreneurs, in particular. Just as it has been documented elsewhere that people tend to become more conservative as they grow older, I wonder if a similar trend exists among the entrepreneurs. While the survey of tech elites from this paper does not trace people over time, it did ask all respondents for their age. Considering how the tech landscape is consistently changing—I imagine respondents could span from the early tech era of the 1980s and 1990s, to the 2000s, to the early 2010s, when the survey was conducted—I believe there could be significant differences in beliefs among different age groups. I could foresee using age to explore the data in several ways. First, the paper presents descriptive results of survey responses for different groups such as the Democratic public, Democratic donors, and technology entrepreneurs. I would propose replicating these same analyses, since these are still questions of interest for me, and stratifying by age (perhaps not across all groups, but at least across the tech elites) to see what new patterns emerge. Second, the paper runs regressions that compare technology entrepreneurs’ political dispositions with Democrats to show that they are not uniquely concerned about regulation of the tech industry as opposed to other industries and that they generally prefer private to public sector management. I would propose two strategies to include age. First, I could add age as an interaction term. This way, I could see the effect of age on being a technology entrepreneur. I could also compare the effect of age on different groups: is the effect stronger on tech entrepreneurs than Democratic donors, for example? Secondly, I could use age as a predictor categorical variable and run the regression only on the tech entrepreneur subset, if I wanted to break out the data by age group. Ultimately, if there are significant results when breaking down the data further by age, this could add to the authors’ conclusions. In their discussion, they predict that tech elites will continue to grow their political influence as their financial means increase and they push for less government regulation. Since most of these tech entrepreneurs are Democrats, this means they may push the Democratic party away from their traditional philosophy and their traditional base of support, such as labor unions. If it turns out that younger tech entrepreneurs are the ones who are most pro-market and anti-regulation, this may suggest that the authors’ predicted outcome is more likely to occur in the future. But if the younger tech entrepreneurs are also the ones who are most pro-redistribution, perhaps their increased influence in Democratic politics may help create a world that most Democrats would approve of in the whole.    
+
+# Appendix
+
+Below are replicated figures and tables in the order they appear in the paper. I did not replicate text-only tables.  
+
+Milestone 5 Graphic: I included a caption for Figure 4, "Average of Policy Indices by Area." Since I replicated all figures, I put them all here in the Appendix, but that would be considered my graphic from Milestone 5.    
+
+```{r fig1, message = F, warning = F}
+
+# Forbes 400 dataset
+
+f400 <- read_dta("tech-elites-paper/Other Data/f400_wtech.dta") 
+
+# Open Secrets donation dataset
+opensecrets <- read_dta("tech-elites-paper/Other Data/opensecrets.dta") %>% 
+  mutate(d_share = d_donations / (d_donations + r_donations))
+
+# Figure 1a
+fig_1a <- f400 %>% 
+  filter(in400 == 1) %>% 
+  group_by(year) %>% 
+  dplyr::summarise(tech_prop = sum(tech) / n()) %>% 
+  ggplot(aes(x = year, y = tech_prop)) +
+    geom_line(col = "dark green") +
+    labs(title = "Share of Forbes 400 Who Are in Tech Industry, by Year",
+         y = "Share", x = "Year",
+         caption = "Source: Bonica and Rosenthal (2015)") 
+ggsave('figures/1a.png', fig_1a, width = 5.5)
+
+# Figure 1b
+fig_1b <- ggplot(opensecrets, aes(x = year, y = d_share)) +
+  geom_line(col = "dark green") + 
+  geom_hline(yintercept = .5, col = "dark red") +
+  labs(title = "Share of Contributions Going to Democrats from All Those \n Working for Tech Companies, by Year",
+       y = "$ Millions", x = "Year",
+       caption = "Source: Opensecrets")
+ggsave('figures/1b.png', fig_1b, width = 5.5)
+
+# Figure 1c
+fig_1c <- f400 %>% 
+  filter(tech == 1) %>% 
+  group_by(year) %>% 
+  dplyr::summarise(tot_amount_dem = sum(tot_amount_dem),
+                   tot_amount_rep = sum(tot_amount_rep)) %>% 
+  mutate(d_donations_share = tot_amount_dem / (tot_amount_dem + tot_amount_rep)) %>% 
+  ggplot(aes(x = year, y = d_donations_share)) +
+    geom_line(col = "dark green") + 
+    geom_hline(yintercept = .5, col = "dark red") +
+    labs(title = "Share of Contributions Going to Democrats from \n Those In Tech and Ever in Forbes 400, by Year",
+         y = "Share", x = "Year",
+         caption = "Source: Bonica and Rosenthal (2015)")
+ggsave('figures/1c.png', fig_1c, width = 5.5)
+
+# Figure 1d
+fig_1d <- ggplot(opensecrets, aes(x = year, y = d_donations)) +
+  geom_line(col = "dark green") + 
+  labs(title = "Total Contributions to Democrats from All Those \n Working for Tech Companies, by Year",
+       y = "$ Millions", x = "Year",
+       caption = "Source: Opensecrets") 
+ggsave('figures/1d.png', fig_1d, width = 5.5)
+
+# Figure 1e
+fig_1e <- f400 %>% 
+  filter(tech == 1) %>% 
+  group_by(year) %>% 
+  dplyr::summarise(tot_amount_dem = sum(tot_amount_dem),
+                   tot_amount_rep = sum(tot_amount_rep)) %>% 
+  mutate(d_donations_share = tot_amount_dem / (tot_amount_dem + tot_amount_rep),
+         tot_amount_dem_millions = tot_amount_dem / 1000000) %>% 
+  ggplot(aes(x = year, y = tot_amount_dem_millions)) +
+    geom_line(col = "dark green") +
+    labs(title = "Total Contributions to Democrats from Those \n In Tech and Ever in Forbes 400, by Year",
+         y = "Share", x = "Year",
+         caption = "Source: Bonica and Rosenthal (2015)") 
+ggsave('figures/1e.png', fig_1e, width = 5.5)
+
+fig_1a <- readPNG('figures/1a.png')
+fig_1b <- readPNG('figures/1b.png')
+fig_1c <- readPNG('figures/1c.png')
+fig_1d <- readPNG('figures/1d.png')
+fig_1e <- readPNG('figures/1e.png')
+
+grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1b, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1c, width = unit(0.75,"npc"), height = unit(1,"npc")), 
+             rasterGrob(fig_1d, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1e, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             widths = c(1,1,1,1), 
+             layout_matrix = rbind(c(NA, 1, 1, NA), c(2,2,3,3), c(4,4,5,5)),
+             top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
+# grid.arrange(
+#              rasterGrob(fig_1b), rasterGrob(fig_1c),
+#              rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2,
+#              top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
+```
+
+
+```{r fig2, message = F, warning = F}
+
+data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
+data <- subset(data, sample == 2) # Subset to donor sample.
+
+deminf <- data[,startsWith(names(data), 'deminf')]
+deminf.more <- deminf == 1
+deminf.less <- deminf == 3
+
+df <- data.frame(colMeans(deminf.less, na.rm = TRUE))
+names(df) <- 'Less'
+df$group <- rownames(df)
+df$group[df$group == 'deminfluence_tech'] <- 'Technology entrepreneurs'
+df$group[df$group == 'deminfluence_smallbiz'] <- 'Small businesses'
+df$group[df$group == 'deminfluence_bigbiz'] <- 'Big businesses'
+df$group[df$group == 'deminfluence_labor'] <- 'Labor unions'
+df$group[df$group == 'deminfluence_lgbt'] <- 'LGBT people and organizations'
+df$group[df$group == 'deminfluence_banks'] <- 'Big banks'
+df$group[df$group == 'deminfluence_civilrights'] <- 'Civil rights organizations'
+df$group[df$group == 'deminfluence_blacks'] <- 'African-Americans'
+df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
+df <- df[order(df$Less),]
+df$group <- factor(df$group, ordered = TRUE, levels = df$group)
+
+less <- ggplot(df) + geom_col(aes(x = group, y = Less)) + coord_flip() + 
+  xlab('') + ylab('') + 
+  labs(title = "Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
+  scale_y_continuous(labels=scales::percent) +
+  theme(plot.title = element_text(size = 10))
+ggsave('figures/donors_think_lessinf.png', less, width = 5.5)
+
+df <- data.frame(colMeans(deminf.more, na.rm = TRUE))
+names(df) <- 'More'
+df$group <- rownames(df)
+df$group[df$group == 'deminfluence_tech'] <- 'Technology entrepreneurs'
+df$group[df$group == 'deminfluence_smallbiz'] <- 'Small businesses'
+df$group[df$group == 'deminfluence_bigbiz'] <- 'Big businesses'
+df$group[df$group == 'deminfluence_labor'] <- 'Labor unions'
+df$group[df$group == 'deminfluence_lgbt'] <- 'LGBT people and organizations'
+df$group[df$group == 'deminfluence_banks'] <- 'Big banks'
+df$group[df$group == 'deminfluence_civilrights'] <- 'Civil rights organizations'
+df$group[df$group == 'deminfluence_blacks'] <- 'African-Americans'
+df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
+df <- df[order(df$More, decreasing = TRUE),]
+df$group <- factor(df$group, ordered = TRUE, levels = df$group)
+
+more <- ggplot(df) + geom_col(aes(x = group, y = More)) + coord_flip() + 
+  xlab('') + ylab('') + 
+  ggtitle('Share of Democratic Donors Expecting Below\nGroup\'s Influence in Party to Increase') +
+  scale_y_continuous(labels=scales::percent) +
+  theme(plot.title = element_text(size = 10))
+ggsave('figures/donors_think_moreinf.png', more, width = 5.5)
+
+fig_2a <- readPNG('figures/donors_think_moreinf.png')
+fig_2b <- readPNG('figures/donors_think_lessinf.png')
+grid.arrange(rasterGrob(fig_2a), rasterGrob(fig_2b), nrow = 1,
+             top = textGrob("Figure 2: Democratic Donors' Forecasts of Groups \n That Will Gain and Lose Influence in the Party", vjust = 2))
+
+```
+
+```{r fig3, message = F, warning = F}
+data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
+data <- subset(data, sample == 3) 
+
+maxemployees <- ggplot(subset(data, !is.na(maxpeopleworkedunderr)),
+       aes(x=to_factor(maxpeopleworkedunderr))) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Max Employees Worked For Respondent') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/maxemployees.png', maxemployees, scale = .6)
+
+millionaire <- ggplot(subset(data, !is.na(millionaire)),
+       aes(x = to_factor(millionaire))) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Millionaire?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/millionaire.png', millionaire, scale = .6)
+
+topposition <- ggplot(subset(data, !is.na(topposition)),
+       aes(x=to_factor(topposition))) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab("Respondent's Top Position Held") + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/topposition.png', topposition, scale = .6)
+
+startedorrunbiz <- ggplot(subset(data, !is.na(startedorrunbusiness)),
+       aes(x=to_factor(startedorrunbusiness))) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Started or Run a Business?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/startedorrunbiz.png', startedorrunbiz, scale = .6)
+
+worksintech <- ggplot(subset(data, !is.na(worksintech)),
+       aes(x=to_factor(worksintech))) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Works in Technology Industry?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/worksintech.png', worksintech, scale = .6)
+
+fig_3a <- readPNG("figures/maxemployees.png")
+fig_3b <- readPNG("figures/millionaire.png")
+fig_3c <- readPNG("figures/topposition.png")
+fig_3d <- readPNG("figures/startedorrunbiz.png")
+fig_3e <- readPNG("figures/worksintech.png")
+grid.arrange(rasterGrob(fig_3a), rasterGrob(fig_3b), rasterGrob(fig_3c),
+             rasterGrob(fig_3d), rasterGrob(fig_3e), nrow = 2,
+             top = "Figure 3: Self-Reported Respondent Characteristics: Technology Entrepreneur Survey")
+
+```
 
 (ref:fig4) Figure 4 sums up the main finding of the paper -- technology entrepreneurs' distinctive bundle of policy views. Technology entrepreneurs have liberal views in many areas. On social issues, globalism, and redistribution, they are more supportive than the Democratic public, educated Democrats, and Democratic donors. Yet on the topic of regulation (the questions included "government regulation of business does more harm than good" and "regulate 'gig' workers like regular workers"), tech entrepreneurs were significantly less supportive than those same groups of Democrats.  On regulation, tech entrepreneurs actually resemble Republicans much more. 
 
@@ -164,220 +365,6 @@ grid.arrange(rasterGrob(fig_4),
 
 ```
 
-
-# Extension
-
-
-
-# Appendix
-
-Below are replicated figures and tables in the order they appear in the paper. I did not replicate text-only tables.  
-
-```{r fig1, message = F, warning = F}
-
-# Forbes 400 dataset
-
-f400 <- read_dta("tech-elites-paper/Other Data/f400_wtech.dta") 
-
-# Open Secrets donation dataset
-opensecrets <- read_dta("tech-elites-paper/Other Data/opensecrets.dta") %>% 
-  mutate(d_share = d_donations / (d_donations + r_donations))
-
-# Figure 1a
-fig_1a <- f400 %>% 
-  filter(in400 == 1) %>% 
-  group_by(year) %>% 
-  dplyr::summarise(tech_prop = sum(tech) / n()) %>% 
-  ggplot(aes(x = year, y = tech_prop)) +
-    geom_line(col = "dark green") +
-    labs(title = "Share of Forbes 400 Who Are in Tech Industry, by Year",
-         y = "Share", x = "Year",
-         caption = "Source: Bonica and Rosenthal (2015)") 
-ggsave('figures/1a.png', fig_1a, width = 5.5)
-
-# Figure 1b
-fig_1b <- ggplot(opensecrets, aes(x = year, y = d_share)) +
-  geom_line(col = "dark green") + 
-  geom_hline(yintercept = .5, col = "dark red") +
-  labs(title = "Share of Contributions Going to Democrats from All Those \n Working for Tech Companies, by Year",
-       y = "$ Millions", x = "Year",
-       caption = "Source: Opensecrets")
-ggsave('figures/1b.png', fig_1b, width = 5.5)
-
-# Figure 1c
-fig_1c <- f400 %>% 
-  filter(tech == 1) %>% 
-  group_by(year) %>% 
-  dplyr::summarise(tot_amount_dem = sum(tot_amount_dem),
-                   tot_amount_rep = sum(tot_amount_rep)) %>% 
-  mutate(d_donations_share = tot_amount_dem / (tot_amount_dem + tot_amount_rep)) %>% 
-  ggplot(aes(x = year, y = d_donations_share)) +
-    geom_line(col = "dark green") + 
-    geom_hline(yintercept = .5, col = "dark red") +
-    labs(title = "Share of Contributions Going to Democrats from \n Those In Tech and Ever in Forbes 400, by Year",
-         y = "Share", x = "Year",
-         caption = "Source: Bonica and Rosenthal (2015)")
-ggsave('figures/1c.png', fig_1c, width = 5.5)
-
-# Figure 1d
-fig_1d <- ggplot(opensecrets, aes(x = year, y = d_donations)) +
-  geom_line(col = "dark green") + 
-  labs(title = "Total Contributions to Democrats from All Those \n Working for Tech Companies, by Year",
-       y = "$ Millions", x = "Year",
-       caption = "Source: Opensecrets") 
-ggsave('figures/1d.png', fig_1d, width = 5.5)
-
-# Figure 1e
-fig_1e <- f400 %>% 
-  filter(tech == 1) %>% 
-  group_by(year) %>% 
-  dplyr::summarise(tot_amount_dem = sum(tot_amount_dem),
-                   tot_amount_rep = sum(tot_amount_rep)) %>% 
-  mutate(d_donations_share = tot_amount_dem / (tot_amount_dem + tot_amount_rep),
-         tot_amount_dem_millions = tot_amount_dem / 1000000) %>% 
-  ggplot(aes(x = year, y = tot_amount_dem_millions)) +
-    geom_line(col = "dark green") +
-    labs(title = "Total Contributions to Democrats from Those \n In Tech and Ever in Forbes 400, by Year",
-         y = "Share", x = "Year",
-         caption = "Source: Bonica and Rosenthal (2015)") 
-ggsave('figures/1e.png', fig_1e, width = 5.5)
-
-fig_1a <- readPNG('figures/1a.png')
-fig_1b <- readPNG('figures/1b.png')
-fig_1c <- readPNG('figures/1c.png')
-fig_1d <- readPNG('figures/1d.png')
-fig_1e <- readPNG('figures/1e.png')
-
-grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")),
-             rasterGrob(fig_1b, width = unit(0.75,"npc"), height = unit(1,"npc")),
-             rasterGrob(fig_1c, width = unit(0.75,"npc"), height = unit(1,"npc")), 
-             rasterGrob(fig_1d, width = unit(0.75,"npc"), height = unit(1,"npc")),
-             rasterGrob(fig_1e, width = unit(0.75,"npc"), height = unit(1,"npc")),
-             widths = c(1,1,1,1), 
-             layout_matrix = rbind(c(NA, 1, 1, NA), c(2,2,3,3), c(4,4,5,5)),
-             top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
-
-par(mfrow = c(2,3))
-# grid.arrange(
-#              rasterGrob(fig_1b), rasterGrob(fig_1c),
-#              rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2,
-#              top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
-```
-
-
-```{r fig2, message = F, warning = F}
-
-data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
-data <- subset(data, sample == 2) # Subset to donor sample.
-
-deminf <- data[,startsWith(names(data), 'deminf')]
-deminf.more <- deminf == 1
-deminf.less <- deminf == 3
-
-df <- data.frame(colMeans(deminf.less, na.rm = TRUE))
-names(df) <- 'Less'
-df$group <- rownames(df)
-df$group[df$group == 'deminfluence_tech'] <- 'Technology entrepreneurs'
-df$group[df$group == 'deminfluence_smallbiz'] <- 'Small businesses'
-df$group[df$group == 'deminfluence_bigbiz'] <- 'Big businesses'
-df$group[df$group == 'deminfluence_labor'] <- 'Labor unions'
-df$group[df$group == 'deminfluence_lgbt'] <- 'LGBT people and organizations'
-df$group[df$group == 'deminfluence_banks'] <- 'Big banks'
-df$group[df$group == 'deminfluence_civilrights'] <- 'Civil rights organizations'
-df$group[df$group == 'deminfluence_blacks'] <- 'African-Americans'
-df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
-df <- df[order(df$Less),]
-df$group <- factor(df$group, ordered = TRUE, levels = df$group)
-
-less <- ggplot(df) + geom_col(aes(x = group, y = Less)) + coord_flip() + 
-  xlab('') + ylab('') + 
-  labs(title = "Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
-  scale_y_continuous(labels=scales::percent) +
-  theme(plot.title = element_text(size = 10))
-ggsave('figures/donors_think_lessinf.png', less, width = 5.5)
-
-df <- data.frame(colMeans(deminf.more, na.rm = TRUE))
-names(df) <- 'More'
-df$group <- rownames(df)
-df$group[df$group == 'deminfluence_tech'] <- 'Technology entrepreneurs'
-df$group[df$group == 'deminfluence_smallbiz'] <- 'Small businesses'
-df$group[df$group == 'deminfluence_bigbiz'] <- 'Big businesses'
-df$group[df$group == 'deminfluence_labor'] <- 'Labor unions'
-df$group[df$group == 'deminfluence_lgbt'] <- 'LGBT people and organizations'
-df$group[df$group == 'deminfluence_banks'] <- 'Big banks'
-df$group[df$group == 'deminfluence_civilrights'] <- 'Civil rights organizations'
-df$group[df$group == 'deminfluence_blacks'] <- 'African-Americans'
-df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
-df <- df[order(df$More, decreasing = TRUE),]
-df$group <- factor(df$group, ordered = TRUE, levels = df$group)
-
-more <- ggplot(df) + geom_col(aes(x = group, y = More)) + coord_flip() + 
-  xlab('') + ylab('') + 
-  ggtitle('Share of Democratic Donors Expecting Below\nGroup\'s Influence in Party to Increase') +
-  scale_y_continuous(labels=scales::percent) +
-  theme(plot.title = element_text(size = 10))
-ggsave('figures/donors_think_moreinf.png', more, width = 5.5)
-
-fig_2a <- readPNG('figures/donors_think_moreinf.png')
-fig_2b <- readPNG('figures/donors_think_lessinf.png')
-grid.arrange(rasterGrob(fig_2a), rasterGrob(fig_2b), nrow = 1,
-             top = textGrob("Figure 2: Democratic Donors' Forecasts of Groups \n That Will Gain and Lose Influence in the Party", vjust = 2))
-
-```
-
-```{r fig3, message = F, warning = F}
-data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
-data <- subset(data, sample == 3) 
-
-maxemployees <- ggplot(subset(data, !is.na(maxpeopleworkedunderr)),
-       aes(x=to_factor(maxpeopleworkedunderr))) + 
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Max Employees Worked For Respondent') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-ggsave('figures/maxemployees.png', maxemployees, scale = .6)
-
-millionaire <- ggplot(subset(data, !is.na(millionaire)),
-       aes(x = to_factor(millionaire))) +
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Millionaire?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-ggsave('figures/millionaire.png', millionaire, scale = .6)
-
-topposition <- ggplot(subset(data, !is.na(topposition)),
-       aes(x=to_factor(topposition))) + 
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab("Respondent's Top Position Held") + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-ggsave('figures/topposition.png', topposition, scale = .6)
-
-startedorrunbiz <- ggplot(subset(data, !is.na(startedorrunbusiness)),
-       aes(x=to_factor(startedorrunbusiness))) + 
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Started or Run a Business?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-ggsave('figures/startedorrunbiz.png', startedorrunbiz, scale = .6)
-
-worksintech <- ggplot(subset(data, !is.na(worksintech)),
-       aes(x=to_factor(worksintech))) + 
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Works in Technology Industry?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-ggsave('figures/worksintech.png', worksintech, scale = .6)
-
-fig_3a <- readPNG("figures/maxemployees.png")
-fig_3b <- readPNG("figures/millionaire.png")
-fig_3c <- readPNG("figures/topposition.png")
-fig_3d <- readPNG("figures/startedorrunbiz.png")
-fig_3e <- readPNG("figures/worksintech.png")
-grid.arrange(rasterGrob(fig_3a), rasterGrob(fig_3b), rasterGrob(fig_3c),
-             rasterGrob(fig_3d), rasterGrob(fig_3e), nrow = 2,
-             top = "Figure 3: Self-Reported Respondent Characteristics: Technology Entrepreneur Survey")
-
-```
-
-```{r fig4output, warning = F}
-
-fig_4 <- readPNG('figures/4.png')
-grid.arrange(rasterGrob(fig_4),
-             top = "Figure 4: Average of Policy Indices by Area")
-
-
-```
 
 
 ```{r table2}

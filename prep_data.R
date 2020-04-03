@@ -2,13 +2,18 @@ library(foreign)
 library(haven)
 library(tidyverse)
 
+# Prep survey datasets
+# My R code based on 'tech-elites-paper/Data Prep Code - Run First' .do files 
+
 # Prepare CS Undergrad Survey Data
 
-undergrad_survey <- read_dta("tech-elites-paper/CS Undergrad Survey Data/combinedwithstanfordugrads.dta")
+undergrad_survey <- 
+  read_dta("tech-elites-paper/CS Undergrad Survey Data/combinedwithstanfordugrads.dta")
 
 undergrad_survey <- undergrad_survey %>% 
   mutate(
-    # generates thee- and seven-point party identification scales based on the original branched survey items.
+    # generates three- and seven-point party identification scales 
+    # based on the original branched survey items.
     
     pid3 = case_when(
       pid1 == 1 ~ 1,
@@ -28,11 +33,13 @@ undergrad_survey <- undergrad_survey %>%
     
     tech = ifelse(sample == 3, 1, 0),
     dem_donors = ifelse(sample==2&party=="D", 1, 0),
-    collegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&(education==4|education==5), 1, 0),
+    collegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&
+                                 (education==4|education==5), 1, 0),
     csmajors = ifelse(sample==4, 1, 0),
     biomajors = ifelse(sample==5, 1, 0)
   ) %>% 
-  filter(tech == 1 | dem_donors == 1 | collegedem_public == 1 | csmajors == 1 | biomajors == 1) %>% 
+  filter(tech == 1 | dem_donors == 1 | collegedem_public == 1 |
+           csmajors == 1 | biomajors == 1) %>% 
   mutate(
     # creates dummy variables to responses to the regulation/redistribution question
     
@@ -40,13 +47,14 @@ undergrad_survey <- undergrad_survey %>%
     nonreg_redist = ifelse(regandredist4way == 2, 1, 0),
     notreg_notredist = ifelse(regandredist4way == 4, 1, 0),
     reg_notredist = ifelse(regandredist4way == 3, 1, 0),
-    # in4way check
-    
+
     # rescales 
     
-    laborinfluenceprivate = ifelse(laborinfluenceprivate == 3, 2, laborinfluenceprivate),
+    laborinfluenceprivate = ifelse(laborinfluenceprivate == 3, 2, 
+                                   laborinfluenceprivate),
     laborinfluenceprivate = laborinfluenceprivate - 1,
-    laborinfluencepublic = ifelse(laborinfluencepublic == 3, 2, laborinfluencepublic),
+    laborinfluencepublic = ifelse(laborinfluencepublic == 3, 2, 
+                                  laborinfluencepublic),
     laborinfluencepublic = laborinfluencepublic - 1,
     
     libertarian = (libertarian-1)/3,
@@ -62,7 +70,8 @@ undergrad_survey <- undergrad_survey %>%
     reg_internetdata = (reg_internetdata-1)/2,
     reg_healthinsurance = (reg_healthinsurance-1)/2,
     reg_oil = (reg_oil-1)/2,
-    govt_reg_business_harm2 = ifelse(businessrand=="business", (govt_reg_business_harm-4)/-3, 0),
+    govt_reg_business_harm2 = ifelse(businessrand=="business", 
+                                     (govt_reg_business_harm-4)/-3, 0),
     flowersussrq = (flowersussrq-2)/-1,
     uberussrq = (uberussrq-2)/-1,
     entrepreneurstoomuchcredit = (entrepreneurstoomuchcredit-1)/3,
@@ -140,10 +149,17 @@ undergrad_survey <- undergrad_survey %>%
     
     # Rescales items for Business Regulation Survey Experiment
     
-    govt_reg_business_harm_business = ifelse(businessrand=="business", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_finance = ifelse(businessrand=="the financial industry (such as banks)", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_pharma = ifelse(businessrand=="the pharmaceutical industry", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_tech = ifelse(businessrand=="the technology industry", (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_business = 
+      ifelse(businessrand=="business", (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_finance = 
+      ifelse(businessrand=="the financial industry (such as banks)", 
+             (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_pharma = 
+      ifelse(businessrand=="the pharmaceutical industry", 
+             (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_tech = 
+      ifelse(businessrand=="the technology industry", 
+             (govt_reg_business_harm-4)/-3, NA),
     
     govruns = 1 - govruns,
     pref_for_private = 4 * (privatesectorruns - govruns),
@@ -152,10 +168,13 @@ undergrad_survey <- undergrad_survey %>%
   )
 
 undergrad_survey$ussrq_combined = rowMeans(undergrad_survey[,11:12], na.rm = T)
-undergrad_survey$regulation = rowMeans(undergrad_survey[,c(1:5, 7, 98, 104)], na.rm = T)
+undergrad_survey$regulation = rowMeans(undergrad_survey[,c(1:5, 7, 98, 104)], 
+                                       na.rm = T)
 undergrad_survey$racialresentment = rowMeans(undergrad_survey[,30:31], na.rm = T)
-undergrad_survey$redistribution = rowMeans(undergrad_survey[,c(14, 19, 23:24, 27)], na.rm = T)
-undergrad_survey$cosmopolitanism2 = rowMeans(undergrad_survey[,c(36:37, 61:65)], na.rm = T)
+undergrad_survey$redistribution = rowMeans(undergrad_survey[,c(14, 19, 23:24, 27)], 
+                                           na.rm = T)
+undergrad_survey$cosmopolitanism2 = rowMeans(undergrad_survey[,c(36:37, 61:65)], 
+                                             na.rm = T)
 undergrad_survey$globalism = rowMeans(undergrad_survey[,c(32:35)], na.rm = T)
 undergrad_survey$authoritarianism = rowMeans(undergrad_survey[,c(42:45)], na.rm = T)
 undergrad_survey$social = rowMeans(undergrad_survey[,c(38:41)], na.rm = T)
@@ -185,17 +204,20 @@ undergrad_survey <- undergrad_survey %>%
          abortion = as.factor(abortion))
 
 
-write_dta(undergrad_survey, "tech-elites-paper/CS Undergrad Survey Data/combined_withmeans_withugrads.dta")
+write_dta(undergrad_survey, 
+          "tech-elites-paper/CS Undergrad Survey Data/combined_withmeans_withugrads.dta")
 
 
 # Prepare Tech Survey Data
 
-tech_survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta")
+tech_survey <- 
+  read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta")
 
 tech_survey <- tech_survey %>% 
   mutate(
     
-    # generates thee- and seven-point party identification scales based on the original branched survey items.
+    # generates three- and seven-point party identification scales 
+    # based on the original branched survey items.
     
     pid3 = case_when(
       pid1 == 1 ~ 1,
@@ -219,17 +241,26 @@ tech_survey <- tech_survey %>%
     dem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3), 1, 0),
     rep_public = ifelse(sample==1&(pid7==5|pid7==6|pid7==7), 1, 0),
     ind_public = ifelse(sample==1&pid7==4, 1, 0),
-    samplegroup1 = ifelse(tech==1|dem_donors==1|rep_donors==1|dem_public==1|rep_public==1|ind_public==1, 1, 0),
+    samplegroup1 = ifelse(tech==1|dem_donors==1|rep_donors==1|
+                            dem_public==1|rep_public==1|ind_public==1, 1, 0),
     
-    # creates dummy variables that separate mass partisans into those with and without college degrees
+    # creates dummy variables that separate mass partisans into 
+    # those with and without college degrees
     
-    collegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&(education==4|education==5), 1, 0),
-    noncollegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&(education==1|education==2|education==3), 1, 0),
-    collegerep_public = ifelse(sample==1&(pid7==5|pid7==6|pid7==7)&(education==4|education==5), 1, 0),
-    noncollegerep_public = ifelse(sample==1&(pid7==5|pid7==6|pid7==7)&(education==1|education==2|education==3), 1, 0),
+    collegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&
+                                 (education==4|education==5), 1, 0),
+    noncollegedem_public = ifelse(sample==1&(pid7==1|pid7==2|pid7==3)&
+                                    (education==1|education==2|education==3), 1, 0),
+    collegerep_public = ifelse(sample==1&(pid7==5|pid7==6|pid7==7)&
+                                 (education==4|education==5), 1, 0),
+    noncollegerep_public = ifelse(sample==1&(pid7==5|pid7==6|pid7==7)&
+                                    (education==1|education==2|education==3), 1, 0),
     collegeind_public = ifelse(sample==1&pid7==4&(education==4|education==5), 1, 0),
-    noncollegeind_public = ifelse(sample==1&pid7==4&(education==1|education==2|education==3), 1 , 0),
-    samplegroup2 = ifelse(tech==1|dem_donors==1|rep_donors==1|collegedem_public==1|collegerep_public==1|collegeind_public==1|noncollegedem_public==1|noncollegerep_public==1|noncollegeind_public==1, 1, 0),
+    noncollegeind_public = ifelse(sample==1&pid7==4&
+                                    (education==1|education==2|education==3), 1 , 0),
+    samplegroup2 = ifelse(tech==1|dem_donors==1|rep_donors==1|collegedem_public==1|
+                          collegerep_public==1|collegeind_public==1|noncollegedem_public==1|
+                            noncollegerep_public==1|noncollegeind_public==1, 1, 0),
     
     # creates dummy variables to responses to the regulation/redistribution question
     
@@ -240,9 +271,11 @@ tech_survey <- tech_survey %>%
     
     # rescales 
 
-    laborinfluenceprivate = ifelse(laborinfluenceprivate == 3, 2, laborinfluenceprivate),
+    laborinfluenceprivate = ifelse(laborinfluenceprivate == 3, 2, 
+                                   laborinfluenceprivate),
     laborinfluenceprivate = laborinfluenceprivate - 1,
-    laborinfluencepublic = ifelse(laborinfluencepublic == 3, 2, laborinfluencepublic),
+    laborinfluencepublic = ifelse(laborinfluencepublic == 3, 2, 
+                                  laborinfluencepublic),
     laborinfluencepublic = laborinfluencepublic - 1,
     
     libertarian = (libertarian-1)/3,
@@ -258,7 +291,8 @@ tech_survey <- tech_survey %>%
     reg_internetdata = (reg_internetdata-1)/2,
     reg_healthinsurance = (reg_healthinsurance-1)/2,
     reg_oil = (reg_oil-1)/2,
-    govt_reg_business_harm2 = ifelse(businessrand=="business", (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm2 = ifelse(businessrand=="business", 
+                                     (govt_reg_business_harm-4)/-3, NA),
     flowersussrq = as.double((flowersussrq-2)/-1),
     uberussrq = as.double((uberussrq-2)/-1),
     entrepreneurstoomuchcredit = (entrepreneurstoomuchcredit-1)/3,
@@ -336,10 +370,17 @@ tech_survey <- tech_survey %>%
     
     # Rescales items for Business Regulation Survey Experiment
     
-    govt_reg_business_harm_business = ifelse(businessrand=="business", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_finance = ifelse(businessrand=="the financial industry (such as banks)", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_pharma = ifelse(businessrand=="the pharmaceutical industry", (govt_reg_business_harm-4)/-3, NA),
-    govt_reg_business_harm_tech = ifelse(businessrand=="the technology industry", (govt_reg_business_harm-4)/-3, NA)
+    govt_reg_business_harm_business = ifelse(businessrand=="business", 
+                                             (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_finance = 
+      ifelse(businessrand=="the financial industry (such as banks)", 
+             (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_pharma = 
+      ifelse(businessrand=="the pharmaceutical industry", 
+             (govt_reg_business_harm-4)/-3, NA),
+    govt_reg_business_harm_tech = 
+      ifelse(businessrand=="the technology industry", 
+             (govt_reg_business_harm-4)/-3, NA)
   ) 
 
 tech_survey$ussrq_combined = rowMeans(tech_survey[,15:16], na.rm = T)
@@ -376,5 +417,6 @@ tech_survey <- tech_survey %>%
 
 
 # Write file
-write_dta(tech_survey, "tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta")
+write_dta(tech_survey, 
+          "tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta")
 
