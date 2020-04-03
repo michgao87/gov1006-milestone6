@@ -2,7 +2,7 @@
 title: "Milestone 6"
 author: "Michelle Gao"
 date: "April 3, 2020"
-output: bookdown::pdf_document2
+output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty]{caption}
 ---
@@ -26,21 +26,148 @@ library(stringr)
 library(tidyr)
 library(tidyverse)
 
-# first run 'tech-elites-paper/prep_data.R' to clean datasets
+# First run 'tech-elites-paper/prep_data.R' to clean datasets
 
 ```
 
-## Paper
-
-Predispositions and the Political Behavior of American Economic Elites: Evidence from Technology Entrepreneurs^[All analysis for this paper is available at https://github.com/michgao87/gov1006-milestone6]
+## Predispositions and the Political Behavior of American Economic Elites: Evidence from Technology Entrepreneurs^[All analysis for this paper is available at https://github.com/michgao87/gov1006-milestone6]
 
 ## Overview
+
+The authors seek to disprove the assumption that economic elites are homogenous and that increases in their political power necessarily increases inequality across the board—specifically, they focus on describing the political behavior of technology elites, who are growing increasingly wealthy and politically influential. They use four original surveys—of technology entrepreneurs in which the modal respondent is a millionaire who founded or runs a tech industry company with around 100 employees; of partisan donors with an oversample of top 1% donors; and subsamples of wealthy individuals and partisans in the mass public from Survey Sampling International. Throughout the paper, they compare the political beliefs of technology entrepreneurs to these other groups. They demonstrate that technology entrepreneurs support liberal redistributive, social, and globalist policies, but conservative regulatory policies. This is a unique bundle among other economic elites that the authors speculate stem from technology entrepreneurs’ unique predispositions. Technology entrepreneurs believe more strongly in markets and entrepreneurship than general Democrats and large Democratic donors—they are more opposed than Democrats to regulation regardless of the industry and generally prefer private to public-sector management. Uniquely among groups, they support redistribution but oppose regulation. Thus, despite some popular belief, they are not very likely to be libertarians. Furthermore, the authors compared the results of entrepreneurs to Stanford CS and biology majors to show that these political predispositions are apparent in STEM undergraduates before they enter the tech workforce. Like the general public, economic elites’ political views stem from values and predispositions, and if similar-minded people tend to cluster in similar industries, views of elites can be distinguished among industries. The authors surmise that their findings provide evidence of looming changes in the Democratic Party, since technology elites are have the financial means to influence candidates but are opposed to many government interventions that have been the standard Democratic answer to inequality and receive support from traditionally Democratic interest groups such as unions.
+
+## Graphic
+```{r fig4, warning = F}
+data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta')
+
+data$medianvoter <- data$sample == 1
+data$massdems <- data$sample == 1 & data$pid3 == 1
+data$massreps <- data$sample == 1 & data$pid3 == 3
+data$masseducdems <- data$massdems & data$education >= 4
+data$donordems <- data$sample == 2 & data$party == 'D'
+data$donorreps <- data$sample == 2 & data$party == 'R'
+data$tech <- data$sample == 3
+data$techdems <- data$sample == 3 & data$pid3 == 1
+data$techreps <- data$sample == 3 & data$pid3 == 3
+data$massmillionaires <- data$sample == 1 & data$millionaire == 1
+
+get.data.subset <- function(filtered.df, group.name) {
+  filtered.df$group <- group.name
+  return(filtered.df)
+}
+
+data <- rbind.data.frame(get.data.subset(filter(data, medianvoter == 1), 'General Public'),
+                         get.data.subset(filter(data, massdems == 1), 
+                                         'Democrats (Mass Sample)'),
+                         get.data.subset(filter(data, masseducdems == 1),
+                                         'College-Educated Democrats (Mass Sample)'),
+                         get.data.subset(filter(data, massreps == 1), 
+                                         'Republicans (Mass Sample)'),
+                         get.data.subset(filter(data, donordems == 1), 
+                                         'Democratic Donors'),
+                         get.data.subset(filter(data, donorreps == 1), 
+                                         'Republican Donors'),
+                         get.data.subset(filter(data, tech == 1), 
+                                         'Technology Entrepreneurs'),
+                         get.data.subset(filter(data, techdems == 1), 
+                                         'Democratic Technology Entrepreneurs'))
+
+
+data$group <- factor(data$group, ordered = TRUE,
+                     levels = unique(data$group)[c(1,2,3,5,4,6,7,8)])
+
+data$regulation <- 1 - data$regulation 
+
+# for use in the next graph
+d.copy <- data %>% 
+  rbind.data.frame(get.data.subset(filter(data, massmillionaires == 1), 
+                                   'Millionaires in Mass Public')) %>%
+  group_by(group) %>% 
+  summarize_each(funs(mean(., na.rm = TRUE), 
+                      se = sd(., na.rm = TRUE) / sqrt(sum(!is.na(.)))),
+                 redistribution, social, globalism, regulation) %>%
+  data.frame()
+
+
+# main analysis data
+data <- filter(data, group != 'Democratic Technology Entrepreneurs')
+data$group <- factor(data$group, ordered = TRUE,
+                     levels = levels(data$group)[1:7])
+
+d <- data %>% 
+  group_by(group) %>% 
+  summarize_each(funs(mean(., na.rm = TRUE), 
+                      se = sd(., na.rm = TRUE) / sqrt(sum(!is.na(.)))),
+                 redistribution, social, globalism, regulation) %>%
+  data.frame()
+
+d <- reshape(d, direction = 'long',
+             varying = names(d)[-1],
+             v.names = 'value',
+             timevar = 'statname',
+             times = names(d)[-1]) %>%
+  separate(statname, c('construct', 'stat'), '_') %>%
+  select(-id) %>%
+  reshape(direction = 'wide',
+          idvar = c('group', 'construct'),
+          timevar = 'stat')
+
+d$ebymax <- with(d, value.mean + value.se * 1.96)
+d$ebymin <- with(d, value.mean - value.se * 1.96)
+
+d$construct <- as.character(d$construct)
+d$construct <- revalue(d$construct, c(globalism = 'Support for Globalism', 
+                                      regulation = 'Support for Regulation',
+                                      social = 'Liberalism on Social Issues', 
+                                      redistribution = 'Support for Redistribution'))
+
+
+g <- ggplot(data = d, aes(x = group)) +
+  geom_col(aes(y = value.mean, fill = group)) + 
+  scale_fill_manual(values = c('grey50',
+                               'dodgerblue1', 'dodgerblue2', 'dodgerblue4',
+                               'firebrick1', 'firebrick4', 
+                               'darkolivegreen3')) +
+  geom_errorbar(aes(ymax = ebymax, ymin = ebymin)) +
+  ylab("Liberalism") + xlab("Group") + theme_bw() +
+  facet_wrap(~construct, scales = 'free') +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+  #  scale_y_continuous(breaks = seq(0, 1, by = .1)) +
+  theme(legend.position="none",
+        strip.background = element_blank(),
+        strip.text.x = element_text(size = 16),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=16),
+        axis.title.x = element_blank())
+ggsave('figures/4.png', g, scale = 1.35, width = 7.75, height = 5)
+
+fig_4 <- readPNG('figures/4.png')
+grid.arrange(rasterGrob(fig_4),
+             top = "Figure 4: Average of Policy Indices by Area")
+
+
+```
+
+Figure 4 sums up the main finding of the paper -- technology entrepreneurs' distinctive bundle of policy views. Technology entrepreneurs have liberal views in many areas. On social issues, globalism, and redistribution, they are more supportive than the Democratic public, educated Democrats, and Democratic donors. Yet on the topic of regulation (the questions included "government regulation of business does more harm than good" and "regulate 'gig' workers like regular workers"), tech entrepreneurs were significantly less supportive than those same groups of Democrats.  On regulation, tech entrepreneurs actually resemble Republicans much more. 
+
+## Replication
+
+Numbers I have not been able to replicate correctly: 1) in Table 2: "Technology Entrepreneurs Do Not Agree with Libertarian Philosophy," my percentage for Tech Entrepreneurs is slightly off, even though my numbers for the other groups are correct; 2) in Table 6: "Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups," my linear regression contains the wrong coefficients relating to the "tech product/service" indicator variable, even though the other parts of the regression are correct. I suspect this is due to scaling the variable incorrectly so I will continue looking into that.
+
+Aesthetics I am looking to improve on: There are a few figures with multiple plots that I would look to display more similarly to the way they are in the original paper. Also, while I used gt for the non-regression tables, I will explore creating them in Latex for greater customization in PDF format. 
+
+## Extension
+
 
 
 ## Appendix
 ```{r fig1, message = F, warning = F}
+
+# Forbes 400 dataset
+
 f400 <- read_dta("tech-elites-paper/Other Data/f400_wtech.dta") 
 
+# Open Secrets donation dataset
 opensecrets <- read_dta("tech-elites-paper/Other Data/opensecrets.dta") %>% 
   mutate(d_share = d_donations / (d_donations + r_donations))
 
@@ -108,12 +235,12 @@ fig_1b <- readPNG('figures/1b.png')
 fig_1c <- readPNG('figures/1c.png')
 fig_1d <- readPNG('figures/1d.png')
 fig_1e <- readPNG('figures/1e.png')
-# grid.arrange(rasterGrob(fig_1a), widths = c(1,1), layout_matrix = rbind(c(1, NA)))
-# grid.arrange(rasterGrob(fig_1b), rasterGrob(fig_1c), ncol = 2)
-# grid.arrange(rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2)    
 
-grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1b, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1c, width = unit(0.75,"npc"), height = unit(1,"npc")), 
-             rasterGrob(fig_1d, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1e, width = unit(0.75,"npc"), height = unit(1,"npc")),
+grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1b, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1c, width = unit(0.75,"npc"), height = unit(1,"npc")), 
+             rasterGrob(fig_1d, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             rasterGrob(fig_1e, width = unit(0.75,"npc"), height = unit(1,"npc")),
              widths = c(1,1,1,1), 
              layout_matrix = rbind(c(NA, 1, 1, NA), c(2,2,3,3), c(4,4,5,5)),
              top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
@@ -126,6 +253,7 @@ grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")
 
 
 ```{r fig2, message = F, warning = F}
+
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
 data <- subset(data, sample == 2) # Subset to donor sample.
 
@@ -149,7 +277,8 @@ df <- df[order(df$Less),]
 df$group <- factor(df$group, ordered = TRUE, levels = df$group)
 
 less <- ggplot(df) + geom_col(aes(x = group, y = Less)) + coord_flip() + 
-  xlab('') + ylab('') + labs(title = "Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
+  xlab('') + ylab('') + 
+  labs(title = "Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
   scale_y_continuous(labels=scales::percent) +
   theme(plot.title = element_text(size = 10))
 ggsave('figures/donors_think_lessinf.png', less, width = 5.5)
@@ -170,7 +299,8 @@ df <- df[order(df$More, decreasing = TRUE),]
 df$group <- factor(df$group, ordered = TRUE, levels = df$group)
 
 more <- ggplot(df) + geom_col(aes(x = group, y = More)) + coord_flip() + 
-  xlab('') + ylab('') + ggtitle('Share of Democratic Donors Expecting Below\nGroup\'s Influence in Party to Increase') +
+  xlab('') + ylab('') + 
+  ggtitle('Share of Democratic Donors Expecting Below\nGroup\'s Influence in Party to Increase') +
   scale_y_continuous(labels=scales::percent) +
   theme(plot.title = element_text(size = 10))
 ggsave('figures/donors_think_moreinf.png', more, width = 5.5)
@@ -227,99 +357,7 @@ grid.arrange(rasterGrob(fig_3a), rasterGrob(fig_3b), rasterGrob(fig_3c),
 
 ```
 
-```{r fig4, warning = F}
-data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta')
-
-data$medianvoter <- data$sample == 1
-data$massdems <- data$sample == 1 & data$pid3 == 1
-data$massreps <- data$sample == 1 & data$pid3 == 3
-data$masseducdems <- data$massdems & data$education >= 4
-data$donordems <- data$sample == 2 & data$party == 'D'
-data$donorreps <- data$sample == 2 & data$party == 'R'
-data$tech <- data$sample == 3
-data$techdems <- data$sample == 3 & data$pid3 == 1
-data$techreps <- data$sample == 3 & data$pid3 == 3
-data$massmillionaires <- data$sample == 1 & data$millionaire == 1
-
-get.data.subset <- function(filtered.df, group.name) {
-  filtered.df$group <- group.name
-  return(filtered.df)
-}
-
-data <- rbind.data.frame(get.data.subset(filter(data, medianvoter == 1), 'General Public'),
-                         get.data.subset(filter(data, massdems == 1), 'Democrats (Mass Sample)'),
-                         get.data.subset(filter(data, masseducdems == 1),
-                                         'College-Educated Democrats (Mass Sample)'),
-                         get.data.subset(filter(data, massreps == 1), 'Republicans (Mass Sample)'),
-                         get.data.subset(filter(data, donordems == 1), 'Democratic Donors'),
-                         get.data.subset(filter(data, donorreps == 1), 'Republican Donors'),
-                         get.data.subset(filter(data, tech == 1), 'Technology Entrepreneurs'),
-                         get.data.subset(filter(data, techdems == 1), 'Democratic Technology Entrepreneurs'))
-
-
-data$group <- factor(data$group, ordered = TRUE,
-                     levels = unique(data$group)[c(1,2,3,5,4,6,7,8)])
-
-
-data$regulation <- 1 - data$regulation # in prior file this var was coded such that positive = conservative
-
-# for use in the next graph
-d.copy <- data %>% 
-  rbind.data.frame(get.data.subset(filter(data, massmillionaires == 1), 'Millionaires in Mass Public')) %>%
-  group_by(group) %>% 
-  summarize_each(funs(mean(., na.rm = TRUE), se = sd(., na.rm = TRUE) / sqrt(sum(!is.na(.)))),
-                 redistribution, social, globalism, regulation) %>%
-  data.frame()
-
-
-# main analysis data
-data <- filter(data, group != 'Democratic Technology Entrepreneurs')
-data$group <- factor(data$group, ordered = TRUE,
-                     levels = levels(data$group)[1:7])
-
-d <- data %>% 
-  group_by(group) %>% 
-  summarize_each(funs(mean(., na.rm = TRUE), se = sd(., na.rm = TRUE) / sqrt(sum(!is.na(.)))),
-                 redistribution, social, globalism, regulation) %>%
-  data.frame()
-
-d <- reshape(d, direction = 'long',
-             varying = names(d)[-1],
-             v.names = 'value',
-             timevar = 'statname',
-             times = names(d)[-1]) %>%
-  separate(statname, c('construct', 'stat'), '_') %>%
-  select(-id) %>%
-  reshape(direction = 'wide',
-          idvar = c('group', 'construct'),
-          timevar = 'stat')
-
-d$ebymax <- with(d, value.mean + value.se * 1.96)
-d$ebymin <- with(d, value.mean - value.se * 1.96)
-
-d$construct <- as.character(d$construct)
-d$construct <- revalue(d$construct, c(globalism = 'Support for Globalism', regulation = 'Support for Regulation',
-                                      social = 'Liberalism on Social Issues', redistribution = 'Support for Redistribution'))
-
-
-g <- ggplot(data = d, aes(x = group)) +
-  geom_col(aes(y = value.mean, fill = group)) + 
-  scale_fill_manual(values = c('grey50',
-                               'dodgerblue1', 'dodgerblue2', 'dodgerblue4',
-                               'firebrick1', 'firebrick4', 
-                               'darkolivegreen3')) +
-  geom_errorbar(aes(ymax = ebymax, ymin = ebymin)) +
-  ylab("Liberalism") + xlab("Group") + theme_bw() +
-  facet_wrap(~construct, scales = 'free') +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
-  #  scale_y_continuous(breaks = seq(0, 1, by = .1)) +
-  theme(legend.position="none",
-        strip.background = element_blank(),
-        strip.text.x = element_text(size = 16),
-        axis.text=element_text(size=9),
-        axis.title=element_text(size=16),
-        axis.title.x = element_blank())
-ggsave('figures/4.png', g, scale = 1.35, width = 7.75, height = 5)
+```{r fig4output, warning = F}
 
 fig_4 <- readPNG('figures/4.png')
 grid.arrange(rasterGrob(fig_4),
@@ -339,7 +377,8 @@ tech_survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/com
            dem_public == 1 ~ "dem pub",
            rep_public == 1 ~ "rep pub"),
          survey = factor(survey, 
-                         levels = c("tech", "dem donor", "rep donor", "dem pub", "rep pub")))
+                         levels = c("tech", "dem donor", "rep donor", 
+                                    "dem pub", "rep pub")))
   
 tech_survey %>% 
   drop_na(libertarian_any_agree, survey) %>% 
@@ -438,7 +477,8 @@ tech_survey <- cbind(c("Do Reg, Do Redist",
                        "Do Reg, Don't Redist", 
                        "Don't Reg, Don't Redist"), 
                      tech_survey, millionaires)
-colnames(tech_survey) <- c(" ", "Tech", "Dem Donors", "Rep Donors", "Dem (Public)", "Rep (Public)", "Millionaires (Public)")
+colnames(tech_survey) <- c(" ", "Tech", "Dem Donors", "Rep Donors", "Dem (Public)", 
+                           "Rep (Public)", "Millionaires (Public)")
 as_tibble(tech_survey) %>% 
   gt()%>%
   tab_header(title = "Table 3: Technology Entrepreneurs Uniquely Support Redistribution But Oppose Regulation",
@@ -481,7 +521,8 @@ data$group <- factor(data$group, ordered = TRUE,
 d <- data %>% 
   group_by(group) %>% 
   summarize_each(funs(mean(., na.rm = TRUE), se = sd(., na.rm = TRUE) / sqrt(sum(!is.na(.)))),
-                 authoritarianism, racialresentment, cosmopolitanism2, entrepreneurstoomuchcredit) %>%
+                 authoritarianism, racialresentment, cosmopolitanism2,
+                 entrepreneurstoomuchcredit) %>%
   data.frame()
 
 d$racialresentment_mean = 1 - d$racialresentment_mean
@@ -611,23 +652,34 @@ survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined
       sample == 2 & party == "D" ~ "Democratic Donors",
       sample == 2 & party == "R" ~ "Republican Donors"),
     govt_reg_business_harm_standard = 5 - govt_reg_business_harm,
-    brandenc = factor(businessrand, levels = c("the technology industry", "the financial industry (such as banks)", "the pharmaceutical industry", "business", "")),
+    brandenc = factor(businessrand, 
+                      levels = c("the technology industry", 
+                                 "the financial industry (such as banks)", 
+                                 "the pharmaceutical industry", "business", "")),
     brand.tech = ifelse(brandenc == "the technology industry", 1, 0),
     brand.fin = ifelse(brandenc == "the financial industry (such as banks)", 1, 0),
     brand.pharma = ifelse(brandenc == "the pharmaceutical industry", 1, 0)
   ) %>% 
   filter(sampletext %in% c("Tech", "Democratic Donors", "Democrats (Mass Public)"),
-         brandenc %in% c("the technology industry", "the financial industry (such as banks)",
+         brandenc %in% c("the technology industry", 
+                         "the financial industry (such as banks)",
                          "the pharmaceutical industry", "business")) %>% 
-  mutate(sampletext = factor(sampletext, levels = c("Tech", "Democratic Donors", "Democrats (Mass Public)")))
+  mutate(sampletext = 
+           factor(sampletext, levels = c("Tech", "Democratic Donors", 
+                                         "Democrats (Mass Public)")))
 
-tech_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin + brand.pharma, data = subset(survey, sampletext == "Tech"))
+tech_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin + brand.pharma, 
+               data = subset(survey, sampletext == "Tech"))
 
-dem_donors_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin + brand.pharma, data = subset(survey, sampletext == "Democratic Donors"))
+dem_donors_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin 
+                     + brand.pharma, 
+                     data = subset(survey, sampletext == "Democratic Donors"))
 
-dem_pub_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin + brand.pharma, data = subset(survey, sampletext == "Democrats (Mass Public)"))
+dem_pub_reg <- lm(govt_reg_business_harm_standard ~ brand.tech + brand.fin + brand.pharma,
+                  data = subset(survey, sampletext == "Democrats (Mass Public)"))
 
-full_reg <- lm(govt_reg_business_harm_standard ~ brand.tech * sampletext + brand.fin * sampletext + brand.pharma * sampletext, data = survey)
+full_reg <- lm(govt_reg_business_harm_standard ~ brand.tech * sampletext + 
+                 brand.fin * sampletext + brand.pharma * sampletext, data = survey)
 
 
 ```
@@ -686,7 +738,9 @@ survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined
   select(samplegroup1cat, reg_ind_drones, reg_ind_selfdriving, reg_ind_wallstreet,
          reg_ind_internetdata, reg_ind_healthinsurance, reg_ind_oil, caseid, tech) %>% 
   gather(sector, value, starts_with("reg_ind_")) %>% 
-    mutate(tech_policy = ifelse(sector=="reg_ind_drones"|sector=="reg_ind_internetdata"|sector=="reg_ind_selfdriving", 1, 0)) 
+    mutate(tech_policy = ifelse(sector == "reg_ind_drones" |
+                                sector == "reg_ind_internetdata" | 
+                                sector == "reg_ind_selfdriving", 1, 0)) 
 
 reg6 <- lm(value ~ tech * tech_policy, data = survey)
 summary(reg6)
@@ -800,8 +854,10 @@ d$ebymax <- with(d, value.mean + value.se * 1.96)
 d$ebymin <- with(d, value.mean - value.se * 1.96)
 
 d$construct <- as.character(d$construct)
-d$construct <- revalue(d$construct, c(globalism = 'Support for Globalism', regulation = 'Support for Regulation',
-                                      social = 'Liberalism on Social Issues', redistribution = 'Support for Redistribution'))
+d$construct <- revalue(d$construct, c(globalism = 'Support for Globalism', 
+                                      regulation = 'Support for Regulation',
+                                      social = 'Liberalism on Social Issues', 
+                                      redistribution = 'Support for Redistribution'))
 
 
 g <- ggplot(data = d, aes(x = group)) +
@@ -824,4 +880,6 @@ fig_8 <- readPNG('figures/8.png')
 grid.arrange(rasterGrob(fig_8),
              top = "Figure 8: Comparing Democrats, Technology Entrepreneurs,\n and Undergraduates: Policy Views")
 ```
+
+## Bibliography
 
