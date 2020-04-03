@@ -2,9 +2,15 @@
 title: "Milestone 6"
 author: "Michelle Gao"
 date: "April 3, 2020"
-output: pdf_document
+output: 
+  bookdown::pdf_document2:
+    toc: False
 header-includes:
     - \usepackage[labelformat=empty]{caption}
+    - \usepackage{makecell}
+    - \usepackage{booktabs}
+bibliography: bibliography.bib
+nocite: '@*'    
 ---
 
 ```{r setup, include=FALSE}
@@ -14,8 +20,9 @@ library(cowplot)
 library(ggrepel)
 library(grid)
 library(gridExtra)
-library(gt)
 library(haven)
+library(kableExtra)
+library(knitr)
 library(labelled)
 library(plyr)
 library(png)
@@ -30,14 +37,23 @@ library(tidyverse)
 
 ```
 
-## Predispositions and the Political Behavior of American Economic Elites: Evidence from Technology Entrepreneurs^[All analysis for this paper is available at https://github.com/michgao87/gov1006-milestone6]
+# Predispositions and the Political Behavior of American Economic Elites: Evidence from Technology Entrepreneurs^[All analysis for this paper is available at https://github.com/michgao87/gov1006-milestone6]
 
-## Overview
+# Overview
 
 The authors seek to disprove the assumption that economic elites are homogenous and that increases in their political power necessarily increases inequality across the board—specifically, they focus on describing the political behavior of technology elites, who are growing increasingly wealthy and politically influential. They use four original surveys—of technology entrepreneurs in which the modal respondent is a millionaire who founded or runs a tech industry company with around 100 employees; of partisan donors with an oversample of top 1% donors; and subsamples of wealthy individuals and partisans in the mass public from Survey Sampling International. Throughout the paper, they compare the political beliefs of technology entrepreneurs to these other groups. They demonstrate that technology entrepreneurs support liberal redistributive, social, and globalist policies, but conservative regulatory policies. This is a unique bundle among other economic elites that the authors speculate stem from technology entrepreneurs’ unique predispositions. Technology entrepreneurs believe more strongly in markets and entrepreneurship than general Democrats and large Democratic donors—they are more opposed than Democrats to regulation regardless of the industry and generally prefer private to public-sector management. Uniquely among groups, they support redistribution but oppose regulation. Thus, despite some popular belief, they are not very likely to be libertarians. Furthermore, the authors compared the results of entrepreneurs to Stanford CS and biology majors to show that these political predispositions are apparent in STEM undergraduates before they enter the tech workforce. Like the general public, economic elites’ political views stem from values and predispositions, and if similar-minded people tend to cluster in similar industries, views of elites can be distinguished among industries. The authors surmise that their findings provide evidence of looming changes in the Democratic Party, since technology elites are have the financial means to influence candidates but are opposed to many government interventions that have been the standard Democratic answer to inequality and receive support from traditionally Democratic interest groups such as unions.
 
-## Graphic
-```{r fig4, warning = F}
+# Replication
+
+Numbers I have not been able to replicate correctly: 1) in Table 2: "Technology Entrepreneurs Do Not Agree with Libertarian Philosophy," my percentage for Tech Entrepreneurs is slightly off, even though my numbers for the other groups are correct; 2) in Table 6: "Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups," my linear regression contains the wrong coefficients relating to the "tech product/service" indicator variable, even though the other parts of the regression are correct. I suspect this is due to scaling the variable incorrectly so I will continue looking into that.
+
+Aesthetics I am looking to improve on: There are a few figures with multiple plots that I would look to display more similarly to the way they are in the original paper. 
+
+# Graphic
+
+(ref:fig4) Figure 4 sums up the main finding of the paper -- technology entrepreneurs' distinctive bundle of policy views. Technology entrepreneurs have liberal views in many areas. On social issues, globalism, and redistribution, they are more supportive than the Democratic public, educated Democrats, and Democratic donors. Yet on the topic of regulation (the questions included "government regulation of business does more harm than good" and "regulate 'gig' workers like regular workers"), tech entrepreneurs were significantly less supportive than those same groups of Democrats.  On regulation, tech entrepreneurs actually resemble Republicans much more. 
+
+```{r fig4, warning = F, message = F, fig.cap="(ref:fig4)"}
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta')
 
 data$medianvoter <- data$sample == 1
@@ -148,19 +164,15 @@ grid.arrange(rasterGrob(fig_4),
 
 ```
 
-Figure 4 sums up the main finding of the paper -- technology entrepreneurs' distinctive bundle of policy views. Technology entrepreneurs have liberal views in many areas. On social issues, globalism, and redistribution, they are more supportive than the Democratic public, educated Democrats, and Democratic donors. Yet on the topic of regulation (the questions included "government regulation of business does more harm than good" and "regulate 'gig' workers like regular workers"), tech entrepreneurs were significantly less supportive than those same groups of Democrats.  On regulation, tech entrepreneurs actually resemble Republicans much more. 
 
-## Replication
-
-Numbers I have not been able to replicate correctly: 1) in Table 2: "Technology Entrepreneurs Do Not Agree with Libertarian Philosophy," my percentage for Tech Entrepreneurs is slightly off, even though my numbers for the other groups are correct; 2) in Table 6: "Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups," my linear regression contains the wrong coefficients relating to the "tech product/service" indicator variable, even though the other parts of the regression are correct. I suspect this is due to scaling the variable incorrectly so I will continue looking into that.
-
-Aesthetics I am looking to improve on: There are a few figures with multiple plots that I would look to display more similarly to the way they are in the original paper. Also, while I used gt for the non-regression tables, I will explore creating them in Latex for greater customization in PDF format. 
-
-## Extension
+# Extension
 
 
 
-## Appendix
+# Appendix
+
+Below are replicated figures and tables in the order they appear in the paper. I did not replicate text-only tables.  
+
 ```{r fig1, message = F, warning = F}
 
 # Forbes 400 dataset
@@ -245,6 +257,7 @@ grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")
              layout_matrix = rbind(c(NA, 1, 1, NA), c(2,2,3,3), c(4,4,5,5)),
              top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
 
+par(mfrow = c(2,3))
 # grid.arrange(
 #              rasterGrob(fig_1b), rasterGrob(fig_1c),
 #              rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2,
@@ -380,28 +393,26 @@ tech_survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/com
                          levels = c("tech", "dem donor", "rep donor", 
                                     "dem pub", "rep pub")))
   
-tech_survey %>% 
+table2 <- tech_survey %>% 
   drop_na(libertarian_any_agree, survey) %>% 
   group_by(survey) %>% 
   dplyr::summarise(agree_perc = percent(sum(libertarian_any_agree)/n(), 
                                         accuracy = 0.1)) %>% 
   spread(survey, agree_perc) %>% 
-  add_column(agree = c("Agree with Libertarian Philosophy"), .before = 1) %>% 
-  gt() %>%
-  tab_header(title = "Table 2: Technology Entrepreneurs Do Not Agree with Libertarian Philosophy",
-             subtitle = md("&nbsp;")) %>%
-  cols_label(
-    agree = "",
-    tech = md("Tech"),
-    `dem donor` = md("Dem Donor"),
-    `rep donor` = md("Rep Donor"),
-    `dem pub` = md("Dem Public"),
-    `rep pub` = md("Rep Public")
-  ) %>%
-  tab_spanner(label = "Survey Respondents",
-              columns = vars(tech, `dem donor`, `rep donor`, `dem pub`, `rep pub`)) %>% 
-  tab_source_note(source_note = "Note: Data are from our technology entrepreneur donor, and mass public surveys. The surveys asked whether individuals agreed or disagreed with the statement “I would like to live in a society where government does nothing except provide national defense and police protection, so that people could be left alone to earn whatever they could.” This question wording is from Page, Bartels, and Seawright (2013). Cell probabilities above give the percent of respondents who either somewhat or strongly agreed.")
+  add_column(agree = c("Agree with Libertarian Philosophy"), .before = 1)
 
+table2 %>% 
+  mutate_all(linebreak) %>%
+   kable("pandoc", booktabs = T, escape = F, align = "c",
+         caption = "Table 2: Technology Entrepreneurs Do Not Agree with Libertarian Philosophy",
+      col.names = linebreak(c("", "Technology \n Entrepreneur \n Survey",
+                              "Democratic \n Donor \n Survey",
+                              "Republican \n Donor \n Survey",
+                              "Democrats \n (Public \n Survey)",
+                              "Republicans \n (Public \n Survey)"),
+                            align = "c")) %>% 
+      add_footnote("Data are from our technology entrepreneur donor, and mass public surveys. The surveys asked whether individuals agreed or disagreed with the statement \"I would like to live in a society where government does nothing except provide national defense and police protection, so that people could be left alone to earn whatever they could.\" This question wording is from Page, Bartels, and Seawright (2013). Cell probabilities above give the percent of respondents who either somewhat or strongly agreed.")
+  
   
 ```
 
@@ -458,7 +469,7 @@ millionaires <- tech_survey %>%
                                         accuracy = 0.1)) %>% 
   t()
 
-tech_survey <- tech_survey %>% 
+table3 <- tech_survey %>% 
   drop_na(survey, regandredist4way) %>%
   group_by(survey) %>% 
   dplyr::summarise(reg_redist = percent(sum(regandredist4way == 1, na.rm = T)/n(), 
@@ -471,20 +482,24 @@ tech_survey <- tech_survey %>%
                                         accuracy = 0.1)) %>% 
   t() 
 
-tech_survey <- tech_survey[-1,] 
-tech_survey <- cbind(c("Do Reg, Do Redist", 
+table3 <- table3[-1,] 
+table3 <- cbind(c("Do Reg, Do Redist", 
                        "Don't Reg, Do Redist", 
                        "Do Reg, Don't Redist", 
                        "Don't Reg, Don't Redist"), 
-                     tech_survey, millionaires)
-colnames(tech_survey) <- c(" ", "Tech", "Dem Donors", "Rep Donors", "Dem (Public)", 
+                     table3, millionaires)
+colnames(table3) <- c(" ", "Tech", "Dem Donors", "Rep Donors", "Dem (Public)", 
                            "Rep (Public)", "Millionaires (Public)")
-as_tibble(tech_survey) %>% 
-  gt()%>%
-  tab_header(title = "Table 3: Technology Entrepreneurs Uniquely Support Redistribution But Oppose Regulation",
-             subtitle = md("&nbsp;")) %>%
-  tab_style(style = cell_text(weight = "bold"),
-            locations = cells_body(rows = 2))
+
+as_tibble(table3) %>% 
+  mutate_all(linebreak) %>%
+  kable("pandoc", booktabs = T, escape = F, align = "c",
+         caption = "Table 3: Technology Entrepreneurs Uniquely Support Redistribution But Oppose Regulation",
+      col.names = linebreak(c("", "Technology \n Entrepreneurs", "Democratic \n Donors",
+                              "Republican \n Donors", "Democrats \n (Public)", 
+                              "Republicans \n (Public)", "Millionaires \n (Public)"),
+                            align = "c")) 
+
 ```
 
 ```{r fig6, message = F, warning = F}
@@ -716,7 +731,7 @@ stargazer(tech_reg, dem_donors_reg, dem_pub_reg, full_reg,
 )
 ```
 
-```{r table6}
+```{r table6, warning = F, message = F}
 
 survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta") %>% 
   mutate(samplegroup1cat = case_when(
@@ -743,7 +758,7 @@ survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined
                                 sector == "reg_ind_selfdriving", 1, 0)) 
 
 reg6 <- lm(value ~ tech * tech_policy, data = survey)
-summary(reg6)
+#summary(reg6)
 
 # // Stacks data so that observation is respondent-industry 
 # gen case_id = _n
@@ -821,13 +836,10 @@ stargazer(private_reg, gov_reg, entre_reg,
 )
 ```
 
-```{r fig8}
+```{r fig8, warning = F, message = F}
 data <- read_dta('tech-elites-paper/CS Undergrad Survey Data/combined_withmeans_withugrads.dta')
 
 data$regulation <- 1 - data$regulation # in prior file this var was coded such that positive = conservative
-
-# main analysis data
-#data$group <- factor(data$group, ordered = TRUE, levels = levels(data$group)[1:7])
 
 groups <- c('Dem College Public', 'Dem Donors', 'Tech Entrepreneurs', 'CS Majors', 'Bio Majors')
 data$group <- groups[data$sample]
@@ -881,5 +893,5 @@ grid.arrange(rasterGrob(fig_8),
              top = "Figure 8: Comparing Democrats, Technology Entrepreneurs,\n and Undergraduates: Policy Views")
 ```
 
-## Bibliography
+# Bibliography
 
