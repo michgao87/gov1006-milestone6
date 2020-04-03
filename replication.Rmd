@@ -1,19 +1,24 @@
 ---
-title: "replication"
+title: "Milestone 6"
 author: "Michelle Gao"
-date: "April 1, 2020"
-output: pdf_document
+date: "April 3, 2020"
+output: bookdown::pdf_document2
+header-includes:
+    - \usepackage[labelformat=empty]{caption}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, eval = F)
+knitr::opts_chunk$set(echo = F, eval = T, cache = T)
 
 library(cowplot)
 library(ggrepel)
+library(grid)
+library(gridExtra)
 library(gt)
 library(haven)
 library(labelled)
 library(plyr)
+library(png)
 library(reshape)
 library(scales)
 library(stargazer)
@@ -21,10 +26,19 @@ library(stringr)
 library(tidyr)
 library(tidyverse)
 
+# first run 'tech-elites-paper/prep_data.R' to clean datasets
 
 ```
 
-```{r fig1}
+## Paper
+
+Predispositions and the Political Behavior of American Economic Elites: Evidence from Technology Entrepreneurs^[All analysis for this paper is available at https://github.com/michgao87/gov1006-milestone6]
+
+## Overview
+
+
+## Appendix
+```{r fig1, message = F, warning = F}
 f400 <- read_dta("tech-elites-paper/Other Data/f400_wtech.dta") 
 
 opensecrets <- read_dta("tech-elites-paper/Other Data/opensecrets.dta") %>% 
@@ -36,19 +50,20 @@ fig_1a <- f400 %>%
   group_by(year) %>% 
   dplyr::summarise(tech_prop = sum(tech) / n()) %>% 
   ggplot(aes(x = year, y = tech_prop)) +
-    geom_line() +
+    geom_line(col = "dark green") +
     labs(title = "Share of Forbes 400 Who Are in Tech Industry, by Year",
          y = "Share", x = "Year",
-         caption = "Source: Bonica and Rosenthal (2015)")
+         caption = "Source: Bonica and Rosenthal (2015)") 
+ggsave('figures/1a.png', fig_1a, width = 5.5)
 
 # Figure 1b
-
 fig_1b <- ggplot(opensecrets, aes(x = year, y = d_share)) +
   geom_line(col = "dark green") + 
   geom_hline(yintercept = .5, col = "dark red") +
-  labs(title = "Share of Contributions Going to Democrats from All Those Working for Tech Companies, by Year",
+  labs(title = "Share of Contributions Going to Democrats from All Those \n Working for Tech Companies, by Year",
        y = "$ Millions", x = "Year",
        caption = "Source: Opensecrets")
+ggsave('figures/1b.png', fig_1b, width = 5.5)
 
 # Figure 1c
 fig_1c <- f400 %>% 
@@ -60,17 +75,18 @@ fig_1c <- f400 %>%
   ggplot(aes(x = year, y = d_donations_share)) +
     geom_line(col = "dark green") + 
     geom_hline(yintercept = .5, col = "dark red") +
-    labs(title = "Share of Contributions Going to Democrats from Those In Tech and Ever in Forbes 400, by Year",
+    labs(title = "Share of Contributions Going to Democrats from \n Those In Tech and Ever in Forbes 400, by Year",
          y = "Share", x = "Year",
          caption = "Source: Bonica and Rosenthal (2015)")
+ggsave('figures/1c.png', fig_1c, width = 5.5)
 
 # Figure 1d
-
 fig_1d <- ggplot(opensecrets, aes(x = year, y = d_donations)) +
   geom_line(col = "dark green") + 
-  labs(title = "Total Contributions to Democrats from All Those Working for Tech Companies, by Year",
+  labs(title = "Total Contributions to Democrats from All Those \n Working for Tech Companies, by Year",
        y = "$ Millions", x = "Year",
-       caption = "Source: Opensecrets")
+       caption = "Source: Opensecrets") 
+ggsave('figures/1d.png', fig_1d, width = 5.5)
 
 # Figure 1e
 fig_1e <- f400 %>% 
@@ -82,25 +98,40 @@ fig_1e <- f400 %>%
          tot_amount_dem_millions = tot_amount_dem / 1000000) %>% 
   ggplot(aes(x = year, y = tot_amount_dem_millions)) +
     geom_line(col = "dark green") +
-    labs(title = "Total Contributions to Democrats from Those In Tech and Ever in Forbes 400, by Year",
+    labs(title = "Total Contributions to Democrats from Those \n In Tech and Ever in Forbes 400, by Year",
          y = "Share", x = "Year",
-         caption = "Source: Bonica and Rosenthal (2015)")
+         caption = "Source: Bonica and Rosenthal (2015)") 
+ggsave('figures/1e.png', fig_1e, width = 5.5)
 
+fig_1a <- readPNG('figures/1a.png')
+fig_1b <- readPNG('figures/1b.png')
+fig_1c <- readPNG('figures/1c.png')
+fig_1d <- readPNG('figures/1d.png')
+fig_1e <- readPNG('figures/1e.png')
+# grid.arrange(rasterGrob(fig_1a), widths = c(1,1), layout_matrix = rbind(c(1, NA)))
+# grid.arrange(rasterGrob(fig_1b), rasterGrob(fig_1c), ncol = 2)
+# grid.arrange(rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2)    
 
+grid.arrange(rasterGrob(fig_1a, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1b, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1c, width = unit(0.75,"npc"), height = unit(1,"npc")), 
+             rasterGrob(fig_1d, width = unit(0.75,"npc"), height = unit(1,"npc")), rasterGrob(fig_1e, width = unit(0.75,"npc"), height = unit(1,"npc")),
+             widths = c(1,1,1,1), 
+             layout_matrix = rbind(c(NA, 1, 1, NA), c(2,2,3,3), c(4,4,5,5)),
+             top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
+
+# grid.arrange(
+#              rasterGrob(fig_1b), rasterGrob(fig_1c),
+#              rasterGrob(fig_1d), rasterGrob(fig_1e), ncol = 2,
+#              top = "Figure 1: Technology Entrepreneurs' Wealth Is Growing, \n and They Increasingly Contribute It to Democrats")
 ```
 
-```{r fig2}
+
+```{r fig2, message = F, warning = F}
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
 data <- subset(data, sample == 2) # Subset to donor sample.
-
 
 deminf <- data[,startsWith(names(data), 'deminf')]
 deminf.more <- deminf == 1
 deminf.less <- deminf == 3
-
-#colMeans(deminf.more, na.rm = TRUE)
-#colMeans(deminf.less, na.rm = TRUE)
-
 
 df <- data.frame(colMeans(deminf.less, na.rm = TRUE))
 names(df) <- 'Less'
@@ -117,10 +148,11 @@ df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
 df <- df[order(df$Less),]
 df$group <- factor(df$group, ordered = TRUE, levels = df$group)
 
-donors_think_lessinf <- ggplot(df) + geom_col(aes(x = group, y = Less)) + coord_flip() + 
-  xlab('') + ylab('') + ggtitle("Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
-  scale_y_continuous(labels=scales::percent)
-
+less <- ggplot(df) + geom_col(aes(x = group, y = Less)) + coord_flip() + 
+  xlab('') + ylab('') + labs(title = "Share of Democratic Donors Expecting Below\nGroup's Influence in Party to Decrease") +
+  scale_y_continuous(labels=scales::percent) +
+  theme(plot.title = element_text(size = 10))
+ggsave('figures/donors_think_lessinf.png', less, width = 5.5)
 
 df <- data.frame(colMeans(deminf.more, na.rm = TRUE))
 names(df) <- 'More'
@@ -137,52 +169,65 @@ df$group[df$group == 'deminfluence_latinos'] <- 'Latinos'
 df <- df[order(df$More, decreasing = TRUE),]
 df$group <- factor(df$group, ordered = TRUE, levels = df$group)
 
-donors_think_moreinf <- ggplot(df) + geom_col(aes(x = group, y = More)) + coord_flip() + 
+more <- ggplot(df) + geom_col(aes(x = group, y = More)) + coord_flip() + 
   xlab('') + ylab('') + ggtitle('Share of Democratic Donors Expecting Below\nGroup\'s Influence in Party to Increase') +
-  scale_y_continuous(labels=scales::percent)
+  scale_y_continuous(labels=scales::percent) +
+  theme(plot.title = element_text(size = 10))
+ggsave('figures/donors_think_moreinf.png', more, width = 5.5)
 
-plot_grid(donors_think_moreinf, donors_think_lessinf)
+fig_2a <- readPNG('figures/donors_think_moreinf.png')
+fig_2b <- readPNG('figures/donors_think_lessinf.png')
+grid.arrange(rasterGrob(fig_2a), rasterGrob(fig_2b), nrow = 1,
+             top = textGrob("Figure 2: Democratic Donors' Forecasts of Groups \n That Will Gain and Lose Influence in the Party", vjust = 2))
+
 ```
 
-```{r fig3}
-# scale = 0.6
+```{r fig3, message = F, warning = F}
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
 data <- subset(data, sample == 3) 
-
-millionaire <- ggplot(subset(data, !is.na(millionaire)),
-       aes(x = to_factor(millionaire))) +
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Millionaire?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
 
 maxemployees <- ggplot(subset(data, !is.na(maxpeopleworkedunderr)),
        aes(x=to_factor(maxpeopleworkedunderr))) + 
   geom_bar(aes(y = (..count..)/sum(..count..))) +
   xlab('Max Employees Worked For Respondent') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/maxemployees.png', maxemployees, scale = .6)
+
+millionaire <- ggplot(subset(data, !is.na(millionaire)),
+       aes(x = to_factor(millionaire))) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Millionaire?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/millionaire.png', millionaire, scale = .6)
 
 topposition <- ggplot(subset(data, !is.na(topposition)),
        aes(x=to_factor(topposition))) + 
   geom_bar(aes(y = (..count..)/sum(..count..))) +
   xlab("Respondent's Top Position Held") + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
-
-worksintech <- ggplot(subset(data, !is.na(worksintech)),
-       aes(x=to_factor(worksintech))) + 
-  geom_bar(aes(y = (..count..)/sum(..count..))) +
-  xlab('Works in Technology Industry?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/topposition.png', topposition, scale = .6)
 
 startedorrunbiz <- ggplot(subset(data, !is.na(startedorrunbusiness)),
        aes(x=to_factor(startedorrunbusiness))) + 
   geom_bar(aes(y = (..count..)/sum(..count..))) +
   xlab('Started or Run a Business?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/startedorrunbiz.png', startedorrunbiz, scale = .6)
 
-millionaire
-maxemployees
-topposition
-worksintech
-startedorrunbiz
+worksintech <- ggplot(subset(data, !is.na(worksintech)),
+       aes(x=to_factor(worksintech))) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  xlab('Works in Technology Industry?') + ylab('Percentage') + scale_y_continuous(labels=scales::percent)
+ggsave('figures/worksintech.png', worksintech, scale = .6)
+
+fig_3a <- readPNG("figures/maxemployees.png")
+fig_3b <- readPNG("figures/millionaire.png")
+fig_3c <- readPNG("figures/topposition.png")
+fig_3d <- readPNG("figures/startedorrunbiz.png")
+fig_3e <- readPNG("figures/worksintech.png")
+grid.arrange(rasterGrob(fig_3a), rasterGrob(fig_3b), rasterGrob(fig_3c),
+             rasterGrob(fig_3d), rasterGrob(fig_3e), nrow = 2,
+             top = "Figure 3: Self-Reported Respondent Characteristics: Technology Entrepreneur Survey")
 
 ```
 
-```{r fig4}
+```{r fig4, warning = F}
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta')
 
 data$medianvoter <- data$sample == 1
@@ -274,9 +319,16 @@ g <- ggplot(data = d, aes(x = group)) +
         axis.text=element_text(size=9),
         axis.title=element_text(size=16),
         axis.title.x = element_blank())
+ggsave('figures/4.png', g, scale = 1.35, width = 7.75, height = 5)
 
-g
+fig_4 <- readPNG('figures/4.png')
+grid.arrange(rasterGrob(fig_4),
+             top = "Figure 4: Average of Policy Indices by Area")
+
+
 ```
+
+
 ```{r table2}
 tech_survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta") %>% 
   mutate(libertarian_any_agree = ifelse(libertarian < 0.5, 1, 0),
@@ -296,31 +348,29 @@ tech_survey %>%
                                         accuracy = 0.1)) %>% 
   spread(survey, agree_perc) %>% 
   add_column(agree = c("Agree with Libertarian Philosophy"), .before = 1) %>% 
-  gt() %>% 
-  tab_header("TABLE 2: Technology Entrepreneurs Do Not Agree with Libertarian Philosophy") %>% 
+  gt() %>%
+  tab_header(title = "Table 2: Technology Entrepreneurs Do Not Agree with Libertarian Philosophy",
+             subtitle = md("&nbsp;")) %>%
   cols_label(
     agree = "",
-    tech = "Technology Entrepreneur Survey",
-    `dem donor` = "Democratic Donor Survey",
-    `rep donor` = "Republican Donor Survey",
-    `dem pub` = "Democrats (Public Survey)",
-    `rep pub` = "Republicans (Public Survey)"
-  ) %>% 
-  tab_source_note(
-    source_note = "Note: Data are from our technology entrepreneur donor, and mass public surveys. The surveys asked whether individuals agreed or
-disagreed with the statement “I would like to live in a society where government does nothing except provide national defense and police
-protection, so that people could be left alone to earn whatever they could.” This question wording is from Page, Bartels, and Seawright
-(2013). Cell probabilities above give the percent of respondents who either somewhat or strongly agreed."
-  )
+    tech = md("Tech"),
+    `dem donor` = md("Dem Donor"),
+    `rep donor` = md("Rep Donor"),
+    `dem pub` = md("Dem Public"),
+    `rep pub` = md("Rep Public")
+  ) %>%
+  tab_spanner(label = "Survey Respondents",
+              columns = vars(tech, `dem donor`, `rep donor`, `dem pub`, `rep pub`)) %>% 
+  tab_source_note(source_note = "Note: Data are from our technology entrepreneur donor, and mass public surveys. The surveys asked whether individuals agreed or disagreed with the statement “I would like to live in a society where government does nothing except provide national defense and police protection, so that people could be left alone to earn whatever they could.” This question wording is from Page, Bartels, and Seawright (2013). Cell probabilities above give the percent of respondents who either somewhat or strongly agreed.")
 
   
 ```
 
 
-```{r fig5}
+```{r fig5, warning = F}
 d.copy$tech <- grepl('Techn', d.copy$group)
 
-reg_redist_x_y_plot <- ggplot(data = d.copy, aes(y = regulation_mean, x = redistribution_mean)) +
+g <- ggplot(data = d.copy, aes(y = regulation_mean, x = redistribution_mean)) +
   geom_smooth(data = subset(d.copy, !tech),
               method='lm', se = FALSE) +
   scale_color_manual(values = c('grey50',
@@ -334,9 +384,18 @@ reg_redist_x_y_plot <- ggplot(data = d.copy, aes(y = regulation_mean, x = redist
   theme(legend.position="none",
         strip.background = element_blank()) +
   scale_y_continuous(name = 'Liberalism on Regulation (0-1 Scale)', limits = c(.3, .8)) +
-  scale_x_continuous(name = 'Liberalism on Redistribution (0-1 Scale)', limits = c(.41, .95))
-reg_redist_x_y_plot
+  scale_x_continuous(name = 'Liberalism on Redistribution (0-1 Scale)', limits = c(.41, .95)) +
+  labs(title = "Figure 5: Technology Entrepreneurs' Distinctive Set \n of Economic Views",
+       caption = "Note: Each point shows the mean of each sample’s scores on the redistribution and regulation scales
+on the x-s y-axes, respectively. The blue line shows the line of best fit for samples other than the
+technology sample.")
+ggsave('figures/5.png', g, scale = .75, width = 8, height = 8, units = 'in')
+
+# fig_5 <- readPNG('figures/5.png')
+# grid.arrange(rasterGrob(fig_5))
 ```
+
+![](figures/5.png)
 
 ```{r table3}
 tech_survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta") %>% 
@@ -374,15 +433,16 @@ tech_survey <- tech_survey %>%
   t() 
 
 tech_survey <- tech_survey[-1,] 
-tech_survey <- cbind(c("Do Regulate and Do Redistribute", 
-                       "Don't Regulate and Do Redistribute", 
-                       "Do Regulate and Don't Redistribute", 
-                       "Don't Regulate and Don't Redistribute"), 
+tech_survey <- cbind(c("Do Reg, Do Redist", 
+                       "Don't Reg, Do Redist", 
+                       "Do Reg, Don't Redist", 
+                       "Don't Reg, Don't Redist"), 
                      tech_survey, millionaires)
-colnames(tech_survey) <- c(" ", "Technology Entrepreneurs", "Democratic Donors", "Republican Donors", "Democrats (Public)", "Republicans (Public)", "Millionaires (Public)")
+colnames(tech_survey) <- c(" ", "Tech", "Dem Donors", "Rep Donors", "Dem (Public)", "Rep (Public)", "Millionaires (Public)")
 as_tibble(tech_survey) %>% 
-  gt() %>% 
-  tab_header("TABLE 3: Technology Entrepreneurs Uniquely Support Redistribution But Oppose Regulation") %>% 
+  gt()%>%
+  tab_header(title = "Table 3: Technology Entrepreneurs Uniquely Support Redistribution But Oppose Regulation",
+             subtitle = md("&nbsp;")) %>%
   tab_style(style = cell_text(weight = "bold"),
             locations = cells_body(rows = 2))
 ```
@@ -416,7 +476,7 @@ data$group[data$donorreps] <- 'Republican Donors'
 data$group[data$tech] <- 'Technology Entrepreneurs'
 
 data$group <- factor(data$group, ordered = TRUE,
-                     levels = unique(data$group)[c(3,2,4,5,1,6,7)])
+                     levels = unique(data$group)[c(2,3,4,5,1,6,7)])
 
 d <- data %>% 
   group_by(group) %>% 
@@ -463,47 +523,15 @@ g <- ggplot(data = d, aes(x = group)) +
         strip.background = element_blank(),
         strip.text.x = element_text(size = 14),
         axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 16))
-g
+        axis.title.y = element_text(size = 16)) 
+ggsave('figures/6.png', g, scale = 1.35, width = 8, height = 5)
+
+fig_6 <- readPNG('figures/6.png')
+grid.arrange(rasterGrob(fig_6),
+             top = "Figure 6: Values and Predispositions")
 ```
 
-```{r fig7}
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
+```{r fig7, warning = F}
 
 data <- read_dta('tech-elites-paper/Tech Donor and Public Survey Data/combined_anon.dta')
 
@@ -549,9 +577,6 @@ make.fig <- function(var, qname){
     dplyr::summarise(n=n()) %>% 
     group_by(group) %>% 
     mutate(perc=n/sum(n, na.rm = T))
-  
-  #print(dfl)
-  
   g <- ggplot(dfl, aes(x=outcome, y=perc)) +
     geom_bar(stat = 'identity', aes(fill = group)) + 
     scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
@@ -565,16 +590,18 @@ make.fig <- function(var, qname){
   return(g)
 }
 
-
-# Figure 7
-multiplot(make.fig('uberussrq', 'Uber Surge Pricing Fair'),
-          make.fig('flowersussrq', 'Florists’ Raising Prices on Holidays Fair'),
-          cols = 1)
+fig_7 <- arrangeGrob(make.fig('uberussrq', 'Uber Surge Pricing Fair'),
+                     make.fig('flowersussrq', 'Florists\' Raising Prices on Holidays Fair'),
+                     ncol = 1)
+ggsave('figures/7.png', fig_7, width = 7, height = 5.5)
+fig_7 <- readPNG('figures/7.png')
+grid.arrange(rasterGrob(fig_7),
+             top = "Figure 7: Uber versus Florists Survey Experiment")
 
 
 ```
 
-```{r table5, eval = T}
+```{r table5}
 survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta") %>% 
   mutate(
     sampletext = case_when(
@@ -605,7 +632,7 @@ full_reg <- lm(govt_reg_business_harm_standard ~ brand.tech * sampletext + brand
 
 ```
 
-```{r table5output, results = "asis", eval = T}
+```{r table5output, results = "asis"}
 
 stargazer(tech_reg, dem_donors_reg, dem_pub_reg, full_reg,
           type = "latex", header = F, notes.align = "l", no.space = T, digits = 2,
@@ -633,7 +660,7 @@ stargazer(tech_reg, dem_donors_reg, dem_pub_reg, full_reg,
           notes.append = F,
           notes = "\\shortstack{Standard errors are in parentheses. \\\\ ${}^{***} p < .001$, ${}^{**} p < .01$, ${}^{*} p < .05$ (two-tailed).}",
           table.layout = "=dc-!ts-n",
-          title = "Technology Entrepreneurs More Likely to Oppose Regulation of Technology, and Less Likely to Oppose of Other Industries, But So Are Other Democrats"
+          title = "Table 5: Technology Entrepreneurs More Likely to Oppose Regulation of Technology, and Less Likely to Oppose of Other Industries, But So Are Other Democrats"
 )
 ```
 
@@ -677,7 +704,26 @@ summary(reg6)
 
 ```
 
-```{r table7, eval = T}
+```{r table6output, results = "asis"}
+
+stargazer(reg6, type = "latex", header = F, no.space = T, notes.align = "l", digits = 3,
+          keep.stat = c("n", "rsq"),
+          covariate.labels = c("Technology Elites",
+                               "Tech Product/Service",
+                               "\\shortstack{Technology Elites x \\\\ Tech Product/Service}",
+                               "\\shortstack{Constant (Base Category = \\\\ Democratic Samples)}"),
+          model.numbers = F,
+          dep.var.labels = "\\shortstack{DV = \"Opposition to regulation of particular\\\\ products and services\" (0-1 scale)}",
+          dep.var.caption = "",
+          notes.append = F,
+          notes = "\\shortstack{Data are stacked at the respondent-by-product/service level. \\\\ Only technology elites, Democratic donors, and Democratic partisans \\\\ in the public are included in this regression. \\\\ Robust standard errors are clustered by respondent in parentheses \\\\  ${}^{**} p < .01$, ${}^{*} p < .05$ (two-tailed).}",
+          table.layout = "=dc-!ts-n",
+          title = "Table 6: Technology Entrepreneurs No More Likely to Oppose Regulating Technology Products Than Democratic Groups"
+)
+```
+
+
+```{r table7}
 survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined_withmeans_anon.dta") %>% 
   mutate(
     sampletext = case_when(
@@ -696,17 +742,12 @@ survey <- read_dta("tech-elites-paper/Tech Donor and Public Survey Data/combined
   )
 
 private_reg <- lm(pref_for_private ~ sampletext, data = survey)
-summary(private_reg)
-
 gov_reg <- lm(gov_goodjob ~ sampletext, data = survey)
-summary(gov_reg)
-
 entre_reg <- lm(entrepreneurstoomuchcredit ~ sampletext, data = survey)
-summary(entre_reg)
 
 ```
 
-```{r table7output, results = "asis", eval = T}
+```{r table7output, results = "asis"}
 stargazer(private_reg, gov_reg, entre_reg, 
           type = "latex", header = F, no.space = T, notes.align = "l", digits = 2,
           keep.stat = c("n", "rsq"),
@@ -719,8 +760,10 @@ stargazer(private_reg, gov_reg, entre_reg,
           column.labels = c("\\shortstack{Approval of Privately Run Programs (1–5)\\\\ Minus Approval of Govt-Run \\\\ Social Programs (1–5)}", "\\shortstack{Govt Does Good Job \\\\ Running Social \\\\ Programs (1–4)}", "\\shortstack{Entrepreneurs Get Too \\\\ Much Credit (1–4)}"),
           dep.var.labels = c("", "", ""),
           dep.var.caption = "",
+          notes.append = F,
+          notes = "\\shortstack{Standard errors are in parentheses. \\\\ ${}^{***} p < .001$, ${}^{**} p < .01$, ${}^{*} p < .05$ (two-tailed).}",
           table.layout = "=c-!ts-n",
-          title = "Relative to Democrats, Technology Entrepreneurs Prefer Private- to Public-Sector Management Generally"
+          title = "Table 7: Relative to Democrats, Technology Entrepreneurs Prefer Private- to Public-Sector Management Generally"
 )
 ```
 
@@ -732,7 +775,7 @@ data$regulation <- 1 - data$regulation # in prior file this var was coded such t
 # main analysis data
 #data$group <- factor(data$group, ordered = TRUE, levels = levels(data$group)[1:7])
 
-groups <- c('Dem College Public', 'Dem Donors', 'Technology Entrepreneurs', 'Computer Science Majors', 'Biology Majors')
+groups <- c('Dem College Public', 'Dem Donors', 'Tech Entrepreneurs', 'CS Majors', 'Bio Majors')
 data$group <- groups[data$sample]
 data$group <- factor(data$group, ordered = TRUE, levels = groups)
 
@@ -775,6 +818,10 @@ g <- ggplot(data = d, aes(x = group)) +
         strip.background = element_blank(),
         strip.text.x = element_text(size = 14),
         axis.title.x = element_blank())
-g
+ggsave('figures/8.png', g, scale = 1.35, width = 8, height = 5)
+
+fig_8 <- readPNG('figures/8.png')
+grid.arrange(rasterGrob(fig_8),
+             top = "Figure 8: Comparing Democrats, Technology Entrepreneurs,\n and Undergraduates: Policy Views")
 ```
 
